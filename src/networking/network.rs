@@ -47,7 +47,7 @@ mod tests {
             NetworkBuilder::new()
                 .with_router(router)
                 .add_node(node)
-                .with_clock(TokioClock::new())
+                .with_clock(clock)
                 .build()
                 .await;
 
