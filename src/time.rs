@@ -27,26 +27,15 @@ pub trait Clock {
     async fn sleep(&self, duration: Self::Duration);
 }
 
-// /// Simulated clock implementation.
-// /// This struct provides a simulated clock that can be controlled by the user.
-// #[derive(Default)]
-// pub struct SimulatedClock {
-//     time: AtomicU64,
-// }
-
-// impl Clock for SimulatedClock {
-//     type Timestamp = u64;
-//     type Duration = u64;
-//     fn now(&self) -> Self::Timestamp {
-//         self.time.load(std::sync::atomic::Ordering::Relaxed)
-//     }
-
-//     async fn sleep(&mut self, duration: Self::Duration) {
-//         self.time
-//             .fetch_add(duration, std::sync::atomic::Ordering::Relaxed);
-//     }
-// }
-
+/// Implementation of a clock that can be used to simulate time.
+///
+/// This clock is based on the `tokio` runtime and can be used to simulate time in a deterministic way.
+/// It provides an interface for getting the current time and sleeping until given time.
+///
+/// ## Panics
+///
+/// Only one instance of this clock should be used in the entire network.
+/// Creating multiple instances of this clock will lead to panic.
 #[derive(Clone)]
 pub struct TokioClock {
     /// queue of scheduled wakeups
