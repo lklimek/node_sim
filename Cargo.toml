@@ -1,0 +1,15 @@
+[package]
+name = "node_sim"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.41", features = [
+    "rt",
+    "macros",
+    "time",
+    "test-util",
+    "sync",
+] }
+futures = { version = "0.3.31" }
+async-trait = { version = "0.1.83" }
