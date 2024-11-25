@@ -20,10 +20,13 @@ use std::sync::Arc;
 
 mod basic_router;
 mod builder;
+mod delay_hop;
 mod network;
 
-pub use basic_router::BasicRouter;
-pub use builder::NetworkBuilder;
+#[allow(unused_imports)]
+pub use {basic_router::BasicRouter, builder::NetworkBuilder, delay_hop::DelayHop};
+
+use futures::future::BoxFuture;
 pub use network::Network;
 use tokio::sync::mpsc;
 
@@ -52,7 +55,10 @@ pub struct Message<P: Clone> {
 /// It can introduce various types of delays and errors.
 /// Note it cannot see message contents, which is considered secure.
 pub trait Hop: Send + Sync {
-    fn process(&self, header: &Header);
+    /// Process the message when it goes through the hop.
+    ///
+    // TODO: Refactor this fn to be async to avoid using BoxFuture
+    fn process<'a>(&'a self, header: &Header) -> BoxFuture<'a, ()>;
 }
 
 /// Network node that can send and receive messages.

@@ -1,14 +1,11 @@
 //! Simple node that just responds to messages.
 
-use std::sync::{atomic::AtomicUsize, Arc};
-
-use futures::{channel::oneshot, future::BoxFuture};
-use tokio::sync::{mpsc, Mutex, Notify};
-
 use crate::{
     networking::{Header, Message, Node, NodeID, Router},
     time::{Clock, TokioClock},
 };
+use std::sync::Arc;
+use tokio::sync::{mpsc, Mutex, Notify};
 
 pub struct PingNode<R: Router> {
     id: NodeID,
@@ -47,14 +44,10 @@ impl<R: Router> PingNode<R> {
             let now = clock.now();
             println!(
                 "{:?}: Node {} received message from {}, send time {:?}",
-                now.duration_since(clock.start_time()).as_millis(),
+                now.duration_since(start).as_millis(),
                 my_id,
                 message.header.sender,
-                message
-                    .header
-                    .timestamp
-                    .duration_since(clock.start_time())
-                    .as_millis(),
+                message.header.timestamp.duration_since(start).as_millis(),
             );
         }
     }
@@ -116,7 +109,7 @@ mod tests {
     use tokio::time::timeout;
 
     use crate::{
-        networking::{BasicRouter, NetworkBuilder, NodeID, Router},
+        networking::{BasicRouter, DelayHop, NetworkBuilder, NodeID, Router},
         time::TokioClock,
     };
 
@@ -126,8 +119,12 @@ mod tests {
     async fn test_ping_node() {
         const NUM_NODES: usize = 5;
 
-        let router = Arc::new(BasicRouter::default());
         let clock = TokioClock::new();
+
+        let router = Arc::new(BasicRouter::default());
+        let hop = Arc::new(DelayHop::new(clock.clone()));
+        router.add_hop(hop).await;
+
         let mut builder = NetworkBuilder::new()
             .with_router(router.clone())
             .with_clock(clock.clone());

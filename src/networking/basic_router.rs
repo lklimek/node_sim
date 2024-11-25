@@ -1,12 +1,9 @@
 //! Basic router implementation.
 
-use std::{
-    collections::{BTreeMap, VecDeque},
-    sync::Arc,
-};
+use std::{collections::BTreeMap, sync::Arc};
 use tokio::sync::{mpsc, Mutex};
 
-use super::{Message, Node, NodeID, Router};
+use super::{Message, NodeID, Router};
 
 #[derive(Default)]
 pub struct BasicRouter {
@@ -33,10 +30,11 @@ impl Router for BasicRouter {
 
         println!("Sending message from {} to {}", from, to);
 
-        let hops = self.hops.lock().await.clone();
-        for hop in hops.iter() {
-            hop.process(&message.header);
+        let hops_guard = self.hops.lock().await;
+        for hop in hops_guard.iter() {
+            hop.process(&message.header).await;
         }
+        drop(hops_guard);
 
         let mut guard = self.subscriptions.lock().await;
         let recipient = match guard.get(&to) {
@@ -61,6 +59,7 @@ impl Router for BasicRouter {
     }
 
     async fn add_hop(&self, hop: Arc<dyn super::Hop>) {
-        self.hops.lock().await.push(hop);
+        let mut guard = self.hops.lock().await;
+        guard.push(hop);
     }
 }

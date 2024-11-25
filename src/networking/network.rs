@@ -35,7 +35,7 @@ impl<R: Router, N: Node<R> + 'static> Network<R, N> {
 mod tests {
     use std::sync::Arc;
 
-    use crate::{networking::NetworkBuilder, ping_node::PingNode, time::TokioClock};
+    use crate::{networking::NetworkBuilder, ping_node::PingNode};
 
     #[tokio::test]
     async fn test_network_builder() {

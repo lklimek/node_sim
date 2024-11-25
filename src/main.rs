@@ -1,5 +1,4 @@
-#![allow(unused)]
-
+#![allow(dead_code)]
 mod error;
 mod networking;
 mod ping_node;

@@ -9,7 +9,7 @@
 //! user.
 //!
 
-use std::{collections::BTreeSet, sync::Arc, task::Wake};
+use std::{collections::BTreeSet, sync::Arc};
 
 use tokio::{
     sync::{Mutex, Notify},
@@ -123,7 +123,6 @@ mod tests {
     async fn test_tokio_clock() {
         let order = Arc::new(Mutex::new(Vec::<usize>::new()));
         let clock = super::TokioClock::new();
-        let start = clock.now();
 
         let t1_clock = clock.clone();
         let t1_order = order.clone();
