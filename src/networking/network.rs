@@ -49,7 +49,8 @@ mod tests {
                 .add_node(node)
                 .with_clock(clock)
                 .build()
-                .await;
+                .await
+                .expect("failed to build network");
 
         assert_eq!(network.nodes.len(), 1);
     }

@@ -137,7 +137,7 @@ mod tests {
             builder = builder.add_node(Arc::new(node));
         }
 
-        let mut network = builder.build().await;
+        let mut network = builder.build().await.expect("failed to build network");
 
         // Start the network and kill it after 60 seconds; note this is "test time", not real time.
         timeout(Duration::from_secs(60), network.start()).await.ok();

@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use crate::time::TokioClock;
+use crate::{error::Error, time::TokioClock};
 
 use super::{Network, Node, Router};
 
@@ -49,18 +49,24 @@ impl<R: Router, N: Node<R>> NetworkBuilder<R, N> {
     /// Build the network.
     ///
     /// You should start the network after building it with [Network::start()].
-    pub async fn build(self) -> Network<R, N> {
-        let router = self.router.expect("router must be set");
+    pub async fn build(self) -> Result<Network<R, N>, Error> {
+        let router = self
+            .router
+            .ok_or(Error::BuilderConfig("router must be set".to_string()))?;
+
+        let clock = self
+            .clock
+            .ok_or(Error::BuilderConfig("clock must be set".to_string()))?;
 
         for node in self.nodes.iter() {
             node.set_router(Arc::clone(&router)).await;
         }
 
-        Network {
-            clock: self.clock.expect("clock must be set"),
+        Ok(Network {
+            clock,
             nodes: self.nodes,
             router,
             node_handles: tokio::task::JoinSet::new(),
-        }
+        })
     }
 }
