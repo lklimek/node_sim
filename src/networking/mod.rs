@@ -44,6 +44,9 @@ pub struct Header {
 /// Message that can be sent between nodes.
 ///
 /// Contains some payload of type `P`.
+///
+/// Note: only `Vec<u8>` payload is supported by the router at the moment.
+/// See [Router] for more details.
 #[derive(Clone)]
 pub struct Message<P: Clone> {
     pub header: Header,
@@ -57,18 +60,25 @@ pub struct Message<P: Clone> {
 pub trait Hop: Send + Sync {
     /// Process the message when it goes through the hop.
     ///
+    /// ## Returns
+    ///
+    /// If the message should be dropped, return `None`.
+    ///
     // TODO: Refactor this fn to be async to avoid using BoxFuture
-    fn process<'a>(&'a self, header: &Header) -> BoxFuture<'a, ()>;
+    fn process<'a>(&'a self, header: &Header) -> BoxFuture<'a, Option<()>>;
 }
 
 /// Network node that can send and receive messages.
 ///
-/// Each node needs to connect to router using [Router::subscribe] and send messages using [Router::send].
+/// Each node needs to subscribe to the router using [Router::subscribe] and send messages using [Router::send].
 ///
 /// Note each node should use the same, network-wide clock.
 #[async_trait::async_trait]
 pub trait Node<R: Router>: Send + Sync {
     /// Start the node.
+    ///
+    /// This function is called by the [Network::start](crate::networking::Network::start) when the node is started.
+    /// The node should subscribe to the router with [Router::subscribe] and start its logic (eg. sending messages).
     async fn start(&self);
 
     /// Change router for the node.
@@ -80,11 +90,28 @@ pub trait Node<R: Router>: Send + Sync {
     fn id(&self) -> NodeID;
 }
 
+/// Router that routes messages between nodes.
+///
+/// Nodes send messages to the router using [Router::send] and subscribe to messages using [Router::subscribe].
 #[async_trait::async_trait]
 pub trait Router: Send + Sync {
+    /// Send a message to the network.
+    ///
+    /// The router will process the message using various hops and send it to the recipient.
+    /// If the recipient is not available, the message will be dropped.
     async fn send(&self, message: Message<Vec<u8>>);
+
+    /// Subscribe to messages for the given node ID.
+    ///
+    /// Returns a receiver that will receive messages for the given node ID.
+    /// The receiver will be closed when the router is gone (most likely during shutdown).
+    ///
+    /// [Node] should subscribe during startup, to receive messages from the router.
     async fn subscribe(&self, id: NodeID) -> mpsc::Receiver<Message<Vec<u8>>>;
 
     /// Add a hop to the router.
+    ///
+    /// The router will process the message using the hops in the order they were added.
+    /// If the hop returns `None`, the message will be dropped.
     async fn add_hop(&self, hop: Arc<dyn Hop>);
 }

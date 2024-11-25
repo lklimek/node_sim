@@ -32,7 +32,10 @@ impl Router for BasicRouter {
 
         let hops_guard = self.hops.lock().await;
         for hop in hops_guard.iter() {
-            hop.process(&message.header).await;
+            if hop.process(&message.header).await.is_none() {
+                println!("Message from {} to {} dropped by hop", from, to);
+                return;
+            }
         }
         drop(hops_guard);
 
